@@ -232,12 +232,70 @@ async def edit_item_page(request: Request, item_id: int, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="Item not found")
     
     categories = db.query(models.Category).all()
-    return templates.TemplateResponse("edit_item.html", {
-        "request": request,
-        "item": item,
-        "user": user,
-        "categories": categories
-    })
+    return templates.TemplateResponse(
+        "edit_item.html",
+        {
+            "request": request,
+            "item": item,
+            "categories": categories,
+            "user": user
+        }
+    )
+
+@app.post("/edit/{item_id}")
+async def edit_item(
+    request: Request,
+    item_id: int,
+    title: str = Form(...),
+    description: str = Form(...),
+    price: float = Form(...),
+    condition: str = Form(...),
+    category: str = Form(...),
+    is_sold: bool = Form(False),
+    images: List[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # 检查或创建分类
+    db_category = db.query(models.Category).filter(models.Category.name == category).first()
+    if not db_category:
+        db_category = models.Category(name=category)
+        db.add(db_category)
+        db.commit()
+        db.refresh(db_category)
+
+    # 更新商品信息
+    item.title = title
+    item.description = description
+    item.price = price
+    item.condition = condition
+    item.category_id = db_category.id
+    item.is_sold = is_sold
+
+    # 处理新上传的图片
+    if images:
+        for image in images:
+            if image.filename and image.content_type.startswith('image/'):
+                try:
+                    image_url = await ImageUploader.upload_image(image)
+                    if image_url:
+                        db_image = models.ItemImage(
+                            image_url=image_url,
+                            item_id=item_id
+                        )
+                        db.add(db_image)
+                except Exception as e:
+                    print(f"Error uploading image: {str(e)}")
+
+    db.commit()
+    return RedirectResponse(url="/", status_code=303)
 
 @app.post("/add-item")
 async def add_item(
@@ -286,68 +344,6 @@ async def add_item(
     
     db.commit()
     return RedirectResponse(url="/", status_code=303)
-
-@app.post("/edit/{item_id}")
-async def update_item(
-    request: Request,
-    item_id: int,
-    title: str = Form(...),
-    description: str = Form(...),
-    price: float = Form(...),
-    condition: str = Form(...),
-    category_id: int = Form(...),
-    images: List[UploadFile] = File(None),
-    existing_image_urls: List[str] = Form([]),
-    db: Session = Depends(get_db)
-):
-    user = await get_current_user(request)
-    if not user or not user.get("is_admin"):
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    item = db.query(models.Item).filter(models.Item.id == item_id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-    
-    # 验证分类是否存在
-    category = db.query(models.Category).filter(models.Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    
-    item.title = title
-    item.description = description
-    item.price = price
-    item.condition = condition
-    item.category_id = category_id
-    
-    # 删除所有现有图片
-    db.query(models.ItemImage).filter(models.ItemImage.item_id == item_id).delete()
-    
-    # 保存现有图片URL
-    for url in existing_image_urls:
-        if url:
-            db_image = models.ItemImage(
-                image_url=url,
-                item_id=item_id
-            )
-            db.add(db_image)
-    
-    # 处理新上传的图片
-    if images:
-        for image in images:
-            if image.content_type.startswith('image/'):
-                try:
-                    image_url = await ImageUploader.upload_image(image)
-                    if image_url:
-                        db_image = models.ItemImage(
-                            image_url=image_url,
-                            item_id=item_id
-                        )
-                        db.add(db_image)
-                except Exception as e:
-                    print(f"Error uploading image: {str(e)}")
-    
-    db.commit()
-    return RedirectResponse(url=f"/item/{item_id}", status_code=303)
 
 @app.post("/delete/{item_id}")
 async def delete_item(request: Request, item_id: int, db: Session = Depends(get_db)):

@@ -21,6 +21,7 @@ class Item(Base):
     price = Column(Float)
     condition = Column(String)
     user_id = Column(Integer)
+    is_sold = Column(Boolean, default=False)  # 添加售出状态字段
     
     # 修改category为外键
     category_id = Column(Integer, ForeignKey("categories.id"))

@@ -55,17 +55,23 @@
                                 <option value="Yeni" {% if item and item.condition == 'Yeni' %}selected{% endif %}>Yeni</option>
                                 <option value="İyi" {% if item and item.condition == 'İyi' %}selected{% endif %}>İyi</option>
                                 <option value="Kullanılmış" {% if item and item.condition == 'Kullanılmış' %}selected{% endif %}>Kullanılmış</option>
-                                <option value="Az Kullanılmış" {% if item and item.condition == 'Az Kullanılmış' %}selected{% endif %}>Az Kullanılmış</option>
                             </select>
                         </div>
                         <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_sold" name="is_sold" 
+                                       {% if item and item.is_sold %}checked{% endif %}>
+                                <label class="form-check-label" for="is_sold">
+                                    SATILDI
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
                             <label for="category" class="form-label">Kategori</label>
-                            <select class="form-select" id="category" name="category_id" required>
-                                <option value="">Kategori Seçin</option>
-                                {% for category in categories %}
-                                <option value="{{ category.id }}" 
-                                        {% if item and item.category_id == category.id %}selected{% endif %}>
-                                    {{ category.name }}
+                            <select class="form-select" id="category" name="category" required>
+                                {% for cat in categories %}
+                                <option value="{{ cat.name }}" {% if item and item.category.name == cat.name %}selected{% endif %}>
+                                    {{ cat.name }}
                                 </option>
                                 {% endfor %}
                             </select>
