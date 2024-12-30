@@ -10,12 +10,13 @@ import secrets
 import os
 from fastapi.responses import HTMLResponse
 from starlette.middleware.sessions import SessionMiddleware
-from typing import List
+from typing import List, Optional
 from utils.image_uploader import ImageUploader
 from utils.markdown_importer import MarkdownImporter
 from utils.database_exporter import DatabaseExporter
 from pathlib import Path
 import datetime
+from sqlalchemy import func, and_
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -37,38 +38,52 @@ async def get_current_user(request: Request):
     return user
 
 @app.get("/")
-async def home(
+async def read_root(
     request: Request,
-    page: int = Query(1, ge=1),
+    category_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
     user = await get_current_user(request)
     
-    # 设置每页显示的数量
-    per_page = 15
+    # 获取所有分类及其商品数量（包括已售出的）
+    categories_with_count = db.query(
+        models.Category,
+        func.count(models.Item.id).label('item_count')
+    ).outerjoin(
+        models.Item,
+        models.Category.id == models.Item.category_id
+    ).group_by(models.Category.id).all()
     
-    # 计算总数和总页数
-    total_items = db.query(models.Item).count()
-    total_pages = (total_items + per_page - 1) // per_page
+    # 构建基础查询
+    base_query = db.query(models.Item)
     
-    # 获取当前页的商品
-    items = db.query(models.Item)\
-        .order_by(models.Item.id.desc())\
-        .offset((page - 1) * per_page)\
-        .limit(per_page)\
-        .all()
+    # 如果指定了分类，添加分类过滤
+    if category_id:
+        base_query = base_query.filter(models.Item.category_id == category_id)
     
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "items": items,
-        "user": user,
-        "current_page": page,
-        "total_pages": total_pages,
-        "has_next": page < total_pages,
-        "has_prev": page > 1,
-        "next_page": page + 1 if page < total_pages else None,
-        "prev_page": page - 1 if page > 1 else None
-    })
+    # 分别获取未售出和已售出的商品
+    unsold_items = base_query.filter(models.Item.is_sold == False).order_by(models.Item.id.desc()).all()
+    sold_items = base_query.filter(models.Item.is_sold == True).order_by(models.Item.id.desc()).all()
+    
+    # 合并商品列表，未售出的在前，已售出的在后
+    items = unsold_items + sold_items
+    
+    # 获取每个商品的第一张图片
+    for item in items:
+        item.first_image = db.query(models.ItemImage).filter(
+            models.ItemImage.item_id == item.id
+        ).first()
+    
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "items": items,
+            "user": user,
+            "categories": categories_with_count,
+            "current_category": category_id
+        }
+    )
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):

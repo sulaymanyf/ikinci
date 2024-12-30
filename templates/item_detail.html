@@ -39,7 +39,7 @@
             <div class="mt-4">
                 <p><strong>Fiyat:</strong> {{ item.price }}TL</p>
                 <p><strong>Durum:</strong> {{ item.condition }}</p>
-                <p><strong>Kategori:</strong> {{ item.category }}</p>
+                <p><strong>Kategori:</strong> {{ item.category.name }}</p>
             </div>
             {% if user and user.is_admin %}
             <div class="mt-4">
