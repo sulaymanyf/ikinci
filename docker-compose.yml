@@ -7,4 +7,8 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-
+    environment:
+      - SMMS_API_KEY=${SMMS_API_KEY}
+      - SECRET_KEY=your-secret-key-here
+    restart: always
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"

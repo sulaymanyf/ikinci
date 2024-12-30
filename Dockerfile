@@ -16,14 +16,23 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 复制项目文件
-COPY . .
+# 复制依赖文件
+COPY requirements.txt .
 
 # 安装Python依赖
 RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制项目文件
+COPY . .
+
+# 创建必要的目录
+RUN mkdir -p /app/static/uploads
+
+# 设置权限
+RUN chmod -R 777 /app/static/uploads
 
 # 暴露端口
 EXPOSE 8000
 
 # 启动命令
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
