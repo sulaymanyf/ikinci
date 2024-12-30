@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            {% if item.images %}
+            <div id="itemCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for image in item.images %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        <img src="{{ image.image_url }}" class="d-block w-100" alt="{{ item.title }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if item.images|length > 1 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#itemCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#itemCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+                <div class="carousel-indicators">
+                    {% for image in item.images %}
+                    <button type="button" data-bs-target="#itemCarousel" data-bs-slide-to="{{ loop.index0 }}"
+                            {% if loop.first %}class="active" aria-current="true"{% endif %}
+                            aria-label="Slide {{ loop.index }}"></button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            <h1>{{ item.title }}</h1>
+            <p class="lead">{{ item.description }}</p>
+            <div class="mt-4">
+                <p><strong>Fiyat:</strong> {{ item.price }}TL</p>
+                <p><strong>Durum:</strong> {{ item.condition }}</p>
+                <p><strong>Kategori:</strong> {{ item.category }}</p>
+            </div>
+            {% if user and user.is_admin %}
+            <div class="mt-4">
+                <a href="/edit/{{ item.id }}" class="btn btn-primary">Düzenle</a>
+                <form action="/delete/{{ item.id }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Bu ürünü silmek istediğinizden emin misiniz?')">Sil</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

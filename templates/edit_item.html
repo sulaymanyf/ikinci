@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="text-center">{% if item %}Ürün Düzenle{% else %}Yeni Ürün Ekle{% endif %}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% if item %}/edit/{{ item.id }}{% else %}/add-item{% endif %}" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Başlık</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ item.title if item else '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3" required>{{ item.description if item else '' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Resimler</label>
+                            <div id="image-container" class="mb-3">
+                                {% if item and item.images %}
+                                    <div class="row">
+                                    {% for image in item.images %}
+                                        <div class="col-md-4 mb-3 image-preview-container">
+                                            <div class="card">
+                                                <img src="{{ image.image_url }}" class="card-img-top" alt="Preview" style="height: 150px; object-fit: cover;">
+                                                <div class="card-body p-2">
+                                                    <input type="hidden" name="existing_image_urls" value="{{ image.image_url }}">
+                                                    <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeImage(this)">Sil</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-2">
+                                <input type="file" class="form-control" name="images" multiple accept="image/*" {% if not item %}required{% endif %}>
+                                <small class="text-muted">Birden fazla resim seçebilirsiniz. Kabul edilen formatlar: JPG, PNG, GIF</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Fiyat (TL)</label>
+                            <input type="number" class="form-control" id="price" name="price" 
+                                   value="{{ item.price if item else '' }}" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="condition" class="form-label">Durum</label>
+                            <select class="form-select" id="condition" name="condition" required>
+                                <option value="Yeni" {% if item and item.condition == 'Yeni' %}selected{% endif %}>Yeni</option>
+                                <option value="İyi" {% if item and item.condition == 'İyi' %}selected{% endif %}>İyi</option>
+                                <option value="Kullanılmış" {% if item and item.condition == 'Kullanılmış' %}selected{% endif %}>Kullanılmış</option>
+                                <option value="Az Kullanılmış" {% if item and item.condition == 'Az Kullanılmış' %}selected{% endif %}>Az Kullanılmış</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Kategori</label>
+                            <select class="form-select" id="category" name="category_id" required>
+                                <option value="">Kategori Seçin</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" 
+                                        {% if item and item.category_id == category.id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Kaydet</button>
+                            <a href="/" class="btn btn-secondary">İptal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function removeImage(button) {
+    const container = button.closest('.image-preview-container');
+    container.remove();
+}
+
+// 添加图片预览功能
+document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+    const files = e.target.files;
+    if (files) {
+        const container = document.getElementById('image-container');
+        const previewRow = document.createElement('div');
+        previewRow.className = 'row mt-3';
+        previewRow.innerHTML = '<h6>Yeni Resimler Önizleme:</h6>';
+        
+        for (let file of files) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const col = document.createElement('div');
+                col.className = 'col-md-4 mb-3';
+                col.innerHTML = `
+                    <div class="card">
+                        <img src="${e.target.result}" class="card-img-top" alt="Preview" style="height: 150px; object-fit: cover;">
+                        <div class="card-body p-2 text-center">
+                            <small class="text-muted">${file.name}</small>
+                        </div>
+                    </div>
+                `;
+                previewRow.appendChild(col);
+            }
+            reader.readAsDataURL(file);
+        }
+        
+        // 移除旧的预览
+        const oldPreview = container.querySelector('.preview-row');
+        if (oldPreview) {
+            oldPreview.remove();
+        }
+        
+        previewRow.classList.add('preview-row');
+        container.appendChild(previewRow);
+    }
+});
+</script>
+{% endblock %}

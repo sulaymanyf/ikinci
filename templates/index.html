@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        {% for item in items %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                {% if item.images %}
+                <img src="{{ item.images[0].image_url }}" class="card-img-top" alt="{{ item.title }}" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.title }}</h5>
+                    <p class="card-text">{{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-primary">{{ item.category.name }}</span>
+                        <span class="badge bg-secondary">{{ item.condition }}</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ item.price }}TL</h5>
+                        <a href="/item/{{ item.id }}" class="btn btn-primary btn-sm">Detaylar</a>
+                    </div>
+                    {% if user and user.is_admin %}
+                    <div class="mt-2">
+                        <a href="/edit/{{ item.id }}" class="btn btn-secondary btn-sm">Düzenle</a>
+                        <button onclick="deleteItem({{ item.id }})" class="btn btn-danger btn-sm">Sil</button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if total_pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="/?page={{ prev_page }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == current_page %}active{% endif %}">
+                <a class="page-link" href="/?page={{ p }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+
+            {% if has_next %}
+            <li class="page-item">
+                <a class="page-link" href="/?page={{ next_page }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+function deleteItem(itemId) {
+    if (confirm('Bu ürünü silmek istediğinizden emin misiniz?')) {
+        fetch(`/delete/${itemId}`, {
+            method: 'POST',
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Ürün silinirken bir hata oluştu.');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

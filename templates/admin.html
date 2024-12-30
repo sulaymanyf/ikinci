@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Yönetici Paneli</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Ürün Yönetimi</h5>
+                                    <p class="card-text">Ürün ekle, düzenle veya sil</p>
+                                    <a href="/add-item" class="btn btn-primary">Yeni Ürün Ekle</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Kategori Yönetimi</h5>
+                                    <p class="card-text">Kategorileri düzenle</p>
+                                    <a href="/categories" class="btn btn-primary">Kategorileri Yönet</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Markdown İçe Aktarma</h5>
+                                    <p class="card-text">Markdown dosyalarından ürün içe aktar</p>
+                                    <button onclick="importProducts()" class="btn btn-primary">İçe Aktar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function importProducts() {
+    if (confirm('Markdown dosyalarından ürünleri içe aktarmak istediğinizden emin misiniz?')) {
+        fetch('/import-products', {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            window.location.reload();
+        })
+        .catch(error => {
+            alert('Hata: ' + error.message);
+        });
+    }
+}
+</script>
+{% endblock %}
