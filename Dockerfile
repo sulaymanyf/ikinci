@@ -33,7 +33,9 @@ RUN mkdir -p /app/static/uploads \
 # 设置权限
 RUN chmod -R 777 /app/static/uploads \
     && chmod -R 777 /app/static/data \
-    && chmod -R 755 /app/templates
+    && chmod -R 755 /app/templates \
+    && touch /app/sql_app.db \
+    && chmod 666 /app/sql_app.db
 
 # 确保目录存在
 RUN ls -la /app/templates

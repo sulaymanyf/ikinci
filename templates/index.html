@@ -2,6 +2,26 @@
 
 {% block content %}
 <div class="container mt-4">
+     <!-- 访问统计 -->
+     <div class="visit-stats mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="badge bg-primary">
+                    <i class="fas fa-users"></i>
+                    Çevrimiçi: <span id="active-users">0</span>
+                </span>
+                <span class="badge bg-success ms-2">
+                    <i class="fas fa-eye"></i>
+                    Toplam Ziyaret: {{ total_visits }}
+                </span>
+                <span class="badge bg-info ms-2">
+                    <i class="fas fa-chart-line"></i>
+                    Sayfa Görüntüleme: {{ page_views }}
+                </span>
+            </div>
+        </div>
+    </div>
+
     <!-- 分类标签 -->
     <div class="categories-section mb-4">
         <h5 class="mb-3">Kategoriler</h5>
@@ -45,6 +65,34 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+    let ws = null;
+    
+    function connectWebSocket() {
+        ws = new WebSocket(`ws://${window.location.host}/ws`);
+        
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            document.getElementById('active-users').textContent = data.active_users;
+        };
+        
+        ws.onclose = function() {
+            // 如果连接关闭，尝试重新连接
+            setTimeout(connectWebSocket, 1000);
+        };
+    }
+    
+    // 页面加载时连接WebSocket
+    connectWebSocket();
+    
+    // 页面关闭时断开连接
+    window.onbeforeunload = function() {
+        if (ws) {
+            ws.close();
+        }
+    };
+</script>
 
 <style>
 .categories-section {
@@ -110,6 +158,21 @@
 
 .sold-item:hover {
     opacity: 1;
+}
+.visit-stats {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 8px 12px;
+}
+
+.badge i {
+    margin-right: 5px;
 }
 </style>
 {% endblock %}

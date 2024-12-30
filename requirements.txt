@@ -11,3 +11,4 @@ jinja2
 itsdangerous
 markdown
 python-frontmatter
+websockets==10.4

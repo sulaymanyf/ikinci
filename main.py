@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends, HTTPException, Form, Response, File, UploadFile, Query
+from fastapi import FastAPI, Request, Depends, HTTPException, Form, Response, File, UploadFile, Query, WebSocket, WebSocketDisconnect
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse
@@ -14,6 +14,7 @@ from typing import List, Optional
 from utils.image_uploader import ImageUploader
 from utils.markdown_importer import MarkdownImporter
 from utils.database_exporter import DatabaseExporter
+from utils.visit_tracker import visit_tracker, update_total_visits
 from pathlib import Path
 import datetime
 from sqlalchemy import func, and_
@@ -37,12 +38,25 @@ async def get_current_user(request: Request):
     user = request.session.get("user")
     return user
 
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)):
+    await visit_tracker.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        await visit_tracker.disconnect(websocket)
+
 @app.get("/")
 async def read_root(
     request: Request,
     category_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
+    # 更新访问统计
+    total_visits = update_total_visits(db)
+    visit_tracker.increment_page_view('home')
+    
     user = await get_current_user(request)
     
     # 获取所有分类及其商品数量（包括已售出的）
@@ -81,7 +95,9 @@ async def read_root(
             "items": items,
             "user": user,
             "categories": categories_with_count,
-            "current_category": category_id
+            "current_category": category_id,
+            "total_visits": total_visits,
+            "page_views": visit_tracker.get_page_views('home')
         }
     )
 

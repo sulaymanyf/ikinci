@@ -5,8 +5,16 @@ services:
     build: .
     ports:
       - "8000:8000"
+    volumes:
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./main.py:/app/main.py
+      - ./models.py:/app/models.py
+      - ./database.py:/app/database.py
+      - ./utils:/app/utils
+      - ./sql_app.db:/app/sql_app.db
     environment:
       - SMMS_API_KEY=${SMMS_API_KEY}
       - SECRET_KEY=your-secret-key-here
     restart: always
-    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "chmod 666 /app/sql_app.db && pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"

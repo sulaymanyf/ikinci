@@ -1,6 +1,7 @@
-from sqlalchemy import Boolean, Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
+from datetime import datetime
 
 class Category(Base):
     __tablename__ = "categories"
@@ -47,3 +48,10 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_admin = Column(Boolean, default=False)
+
+class VisitStats(Base):
+    __tablename__ = "visit_stats"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    total_visits = Column(Integer, default=0)
+    last_reset = Column(DateTime, default=datetime.utcnow)
