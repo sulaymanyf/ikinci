@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Depends, HTTPException, Form, Response, File, UploadFile, Query
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from sqlalchemy.orm import Session
 import models
 from database import engine, get_db, SessionLocal
@@ -13,7 +13,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from typing import List
 from utils.image_uploader import ImageUploader
 from utils.markdown_importer import MarkdownImporter
+from utils.database_exporter import DatabaseExporter
 from pathlib import Path
+import datetime
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -377,6 +379,52 @@ async def import_products(request: Request, db: Session = Depends(get_db)):
         return {"message": "Products imported successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/export-database")
+async def export_database(request: Request):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    try:
+        export_path = DatabaseExporter.export_to_json()
+        return FileResponse(
+            path=export_path,
+            filename=os.path.basename(export_path),
+            media_type='application/json'
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/import-database")
+async def import_database(
+    request: Request,
+    file: UploadFile = File(...),
+):
+    user = await get_current_user(request)
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # 创建临时文件
+    temp_file = f"temp_import_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    try:
+        # 保存上传的文件
+        with open(temp_file, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # 导入数据
+        success = DatabaseExporter.import_from_json(temp_file)
+        
+        return {"message": "Database imported successfully" if success else "Import failed"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    finally:
+        # 清理临时文件
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
 
 # 初始化数据库并添加示例商品
 def init_db(db: Session):
