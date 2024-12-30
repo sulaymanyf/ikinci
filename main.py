@@ -14,7 +14,7 @@ from typing import List, Optional
 from utils.image_uploader import ImageUploader
 from utils.markdown_importer import MarkdownImporter
 from utils.database_exporter import DatabaseExporter
-from utils.visit_tracker import visit_tracker, update_total_visits
+from utils.visit_tracker import visit_tracker
 from pathlib import Path
 import datetime
 from sqlalchemy import func, and_
@@ -54,7 +54,7 @@ async def read_root(
     db: Session = Depends(get_db)
 ):
     # 更新访问统计
-    total_visits = update_total_visits(db)
+    total_visits = visit_tracker.increment_total_visits()
     visit_tracker.increment_page_view('home')
     
     user = await get_current_user(request)
