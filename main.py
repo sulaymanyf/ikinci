@@ -13,15 +13,21 @@ from starlette.middleware.sessions import SessionMiddleware
 from typing import List
 from utils.image_uploader import ImageUploader
 from utils.markdown_importer import MarkdownImporter
+from pathlib import Path
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
 
-# 配置模板和静态文件
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# 获取项目根目录
+BASE_DIR = Path(__file__).resolve().parent
+
+# 配置静态文件
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+
+# 配置模板
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # 获取当前用户
 async def get_current_user(request: Request):

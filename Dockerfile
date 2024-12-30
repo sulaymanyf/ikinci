@@ -26,10 +26,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 创建必要的目录
-RUN mkdir -p /app/static/uploads
+RUN mkdir -p /app/static/uploads \
+    && mkdir -p /app/templates \
+    && mkdir -p /app/static/data
 
 # 设置权限
-RUN chmod -R 777 /app/static/uploads
+RUN chmod -R 777 /app/static/uploads \
+    && chmod -R 777 /app/static/data \
+    && chmod -R 755 /app/templates
+
+# 确保目录存在
+RUN ls -la /app/templates
 
 # 暴露端口
 EXPOSE 8000
