@@ -1,57 +1,60 @@
-from sqlalchemy import Boolean, Column, Integer, String, Float, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
-from database import Base
+from pydantic import BaseModel, Field
+from typing import Optional, List
 from datetime import datetime
 
-class Category(Base):
-    __tablename__ = "categories"
+class CategoryBase(BaseModel):
+    name: str
+    description: Optional[str] = None
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    description = Column(String, nullable=True)
-    
-    # 添加与商品的关系
-    items = relationship("Item", back_populates="category")
+class CategoryCreate(CategoryBase):
+    pass
 
-class Item(Base):
-    __tablename__ = "items"
+class CategoryResponse(CategoryBase):
+    id: int
+    created_at: datetime = Field(default_factory=datetime.now)
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String)
-    price = Column(Float)
-    condition = Column(String)
-    user_id = Column(Integer)
-    is_sold = Column(Boolean, default=False)  # 添加售出状态字段
-    
-    # 修改category为外键
-    category_id = Column(Integer, ForeignKey("categories.id"))
-    category = relationship("Category", back_populates="items")
-    
-    # 添加与图片的关系
-    images = relationship("ItemImage", back_populates="item", cascade="all, delete-orphan")
+    class Config:
+        from_attributes = True
 
-class ItemImage(Base):
-    __tablename__ = "item_images"
+class ItemBase(BaseModel):
+    title: str
+    description: str
+    price: float
+    condition: str
+    category_id: int
+    is_sold: bool = False
 
-    id = Column(Integer, primary_key=True, index=True)
-    image_url = Column(String)
-    item_id = Column(Integer, ForeignKey("items.id"))
-    
-    # 添加与商品的关系
-    item = relationship("Item", back_populates="images")
+class ItemCreate(ItemBase):
+    pass
 
-class User(Base):
-    __tablename__ = "users"
+class ItemResponse(ItemBase):
+    id: int
+    created_at: datetime = Field(default_factory=datetime.now)
+    images: List["ItemImageResponse"] = []
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    is_admin = Column(Boolean, default=False)
+    class Config:
+        from_attributes = True
 
-class VisitStats(Base):
-    __tablename__ = "visit_stats"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    total_visits = Column(Integer, default=0)
-    last_reset = Column(DateTime, default=datetime.utcnow)
+class ItemImageBase(BaseModel):
+    image_url: str
+    item_id: int
+
+class ItemImageCreate(ItemImageBase):
+    pass
+
+class ItemImageResponse(ItemImageBase):
+    id: int
+    created_at: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        from_attributes = True
+
+# 更新 ItemResponse 的 images 字段的前向引用
+ItemResponse.model_rebuild()
+
+class VisitStats(BaseModel):
+    total_visits: int = 0
+    last_reset: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        from_attributes = True

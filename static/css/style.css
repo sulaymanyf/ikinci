@@ -1,0 +1,79 @@
+/* 卡片样式 */
+.card {
+    transition: transform 0.2s;
+    height: 100%;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* 已售出物品样式 */
+.sold-item {
+    opacity: 0.7;
+    filter: grayscale(70%);
+}
+
+/* 图片容器样式 */
+.card-img-container {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 图片样式 */
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* 已售出标记样式 */
+.sold-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    z-index: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* 价格样式 */
+.price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* 点赞数样式 */
+.likes-count {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #dc3545;
+}
+
+.likes-count i {
+    font-size: 1.1rem;
+}
+
+/* 链接样式 */
+a.text-decoration-none:hover {
+    text-decoration: none;
+}
+
+a.text-decoration-none .card-title {
+    color: #212529;
+}
+
+/* 已售出卡片标题样式 */
+.sold-item .card-title {
+    color: #6c757d;
+}

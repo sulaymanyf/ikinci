@@ -11,4 +11,5 @@ jinja2
 itsdangerous
 markdown
 python-frontmatter
-websockets==10.4
+websockets==13.1
+supabase==2.11.0

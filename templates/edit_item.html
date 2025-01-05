@@ -1,134 +1,179 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h3 class="text-center">{% if item %}Ürün Düzenle{% else %}Yeni Ürün Ekle{% endif %}</h3>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{% if item %}/edit/{{ item.id }}{% else %}/add-item{% endif %}" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="title" class="form-label">Başlık</label>
-                            <input type="text" class="form-control" id="title" name="title" 
-                                   value="{{ item.title if item else '' }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Açıklama</label>
-                            <textarea class="form-control" id="description" name="description" 
-                                      rows="3" required>{{ item.description if item else '' }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Resimler</label>
-                            <div id="image-container" class="mb-3">
-                                {% if item and item.images %}
-                                    <div class="row">
-                                    {% for image in item.images %}
-                                        <div class="col-md-4 mb-3 image-preview-container">
-                                            <div class="card">
-                                                <img src="{{ image.image_url }}" class="card-img-top" alt="Preview" style="height: 150px; object-fit: cover;">
-                                                <div class="card-body p-2">
-                                                    <input type="hidden" name="existing_image_urls" value="{{ image.image_url }}">
-                                                    <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeImage(this)">Sil</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="mb-2">
-                                <input type="file" class="form-control" name="images" multiple accept="image/*" {% if not item %}required{% endif %}>
-                                <small class="text-muted">Birden fazla resim seçebilirsiniz. Kabul edilen formatlar: JPG, PNG, GIF</small>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="price" class="form-label">Fiyat (TL)</label>
-                            <input type="number" class="form-control" id="price" name="price" 
-                                   value="{{ item.price if item else '' }}" step="0.01" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="condition" class="form-label">Durum</label>
-                            <select class="form-select" id="condition" name="condition" required>
-                                <option value="Yeni" {% if item and item.condition == 'Yeni' %}selected{% endif %}>Yeni</option>
-                                <option value="İyi" {% if item and item.condition == 'İyi' %}selected{% endif %}>İyi</option>
-                                <option value="Kullanılmış" {% if item and item.condition == 'Kullanılmış' %}selected{% endif %}>Kullanılmış</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="is_sold" name="is_sold" 
-                                       {% if item and item.is_sold %}checked{% endif %}>
-                                <label class="form-check-label" for="is_sold">
-                                    SATILDI
-                                </label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="category" class="form-label">Kategori</label>
-                            <select class="form-select" id="category" name="category" required>
-                                {% for cat in categories %}
-                                <option value="{{ cat.name }}" {% if item and item.category.name == cat.name %}selected{% endif %}>
-                                    {{ cat.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Kaydet</button>
-                            <a href="/" class="btn btn-secondary">İptal</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
+<div class="container mt-4">
+    <h2>{% if is_new %}Yeni Ürün Ekle{% else %}Ürün Düzenle{% endif %}</h2>
+    <form id="editItemForm" class="mt-4" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="title" class="form-label">Başlık</label>
+            <input type="text" class="form-control" id="title" name="title" value="{{ item.title }}" required>
         </div>
-    </div>
+        
+        <div class="mb-3">
+            <label for="description" class="form-label">Açıklama</label>
+            <textarea class="form-control" id="description" name="description" rows="3" required>{{ item.description }}</textarea>
+        </div>
+        
+        <div class="mb-3">
+            <label for="price" class="form-label">Fiyat (TL)</label>
+            <input type="number" class="form-control" id="price" name="price" value="{{ item.price }}" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="new_price" class="form-label">Yeni Fiyat (TL) (Opsiyonel)</label>
+            <input type="number" class="form-control" id="new_price" name="new_price" value="{{ item.new_price }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="condition" class="form-label">Durum</label>
+            <select class="form-control" id="condition" name="condition" required>
+                <option value="">Durum Seçin</option>
+                <option value="new" {% if item.condition == 'new' %}selected{% endif %}>Yeni</option>
+                <option value="like_new" {% if item.condition == 'like_new' %}selected{% endif %}>Yeni Gibi</option>
+                <option value="very_good" {% if item.condition == 'very_good' %}selected{% endif %}>Çok İyi</option>
+                <option value="good" {% if item.condition == 'good' %}selected{% endif %}>İyi</option>
+                <option value="acceptable" {% if item.condition == 'acceptable' %}selected{% endif %}>Kabul Edilebilir</option>
+            </select>
+        </div>
+        
+        <div class="mb-3">
+            <label for="category" class="form-label">Kategori</label>
+            <select class="form-control" id="category" name="category_id" required>
+                <option value="">Kategori Seçin</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category.id == item.category_id %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if not is_new %}
+        <!-- 现有图片展示区域 -->
+        <div class="mb-3">
+            <label class="form-label">Mevcut Resimler</label>
+            <div class="row" id="existingImages">
+                {% for image in images %}
+                <div class="col-md-4 mb-3" data-image-id="{{ image.id }}">
+                    <div class="card">
+                        <img src="{{ image.image_url }}" class="card-img-top" alt="Product image">
+                        <div class="card-body">
+                            <button type="button" class="btn btn-danger btn-sm delete-image" 
+                                    data-image-id="{{ image.id }}">
+                                <i class="fas fa-trash"></i> Sil
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="deleted_images" id="deletedImages">
+        </div>
+        {% endif %}
+        
+        <!-- 新图片上传区域 -->
+        <div class="mb-3">
+            <label for="images" class="form-label">{% if is_new %}Resimler{% else %}Yeni Resimler Ekle{% endif %}</label>
+            <input type="file" class="form-control" id="images" name="images" multiple accept="image/*" {% if is_new %}required{% endif %}>
+            <div id="imagePreview" class="row mt-2 g-2"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+        <a href="/" class="btn btn-secondary">İptal</a>
+    </form>
 </div>
 
 <script>
-function removeImage(button) {
-    const container = button.closest('.image-preview-container');
-    container.remove();
-}
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('editItemForm');
+    const deletedImagesInput = document.getElementById('deletedImages');
+    const deletedImageIds = new Set();
+    
+    // 处理删除现有图片
+    document.querySelectorAll('.delete-image').forEach(button => {
+        button.addEventListener('click', function() {
+            const imageId = this.dataset.imageId;
+            const imageContainer = document.querySelector(`[data-image-id="${imageId}"]`);
+            
+            // 添加到删除列表
+            deletedImageIds.add(imageId);
+            deletedImagesInput.value = Array.from(deletedImageIds).join(',');
+            
+            // 隐藏图片
+            imageContainer.style.display = 'none';
+        });
+    });
 
-// 添加图片预览功能
-document.querySelector('input[type="file"]').addEventListener('change', function(e) {
-    const files = e.target.files;
-    if (files) {
-        const container = document.getElementById('image-container');
-        const previewRow = document.createElement('div');
-        previewRow.className = 'row mt-3';
-        previewRow.innerHTML = '<h6>Yeni Resimler Önizleme:</h6>';
-        
-        for (let file of files) {
+    // 图片预览功能
+    const imageInput = document.getElementById('images');
+    const previewContainer = document.getElementById('imagePreview');
+    
+    imageInput.addEventListener('change', function() {
+        previewContainer.innerHTML = '';
+        [...this.files].forEach(file => {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const col = document.createElement('div');
-                col.className = 'col-md-4 mb-3';
+                col.className = 'preview-container';
                 col.innerHTML = `
-                    <div class="card">
-                        <img src="${e.target.result}" class="card-img-top" alt="Preview" style="height: 150px; object-fit: cover;">
-                        <div class="card-body p-2 text-center">
-                            <small class="text-muted">${file.name}</small>
-                        </div>
+                    <div class="preview-card">
+                        <img src="${e.target.result}" class="preview-image" alt="Preview">
                     </div>
                 `;
-                previewRow.appendChild(col);
-            }
+                previewContainer.appendChild(col);
+            };
             reader.readAsDataURL(file);
-        }
+        });
+    });
+
+    // 表单提交
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
         
-        // 移除旧的预览
-        const oldPreview = container.querySelector('.preview-row');
-        if (oldPreview) {
-            oldPreview.remove();
-        }
+        const formData = new FormData(this);
         
-        previewRow.classList.add('preview-row');
-        container.appendChild(previewRow);
-    }
+        try {
+            const response = await fetch('{% if is_new %}/add_item{% else %}/edit_item/{{ item.id }}{% endif %}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                window.location.href = '/';
+            } else {
+                alert('Hata oluştu: ' + result.message);
+            }
+        } catch (error) {
+            alert('Bir hata oluştu: ' + error);
+        }
+    });
 });
 </script>
+
+<style>
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.preview-container {
+    width: 14%;
+    padding: 5px;
+    display: inline-block;
+}
+
+.preview-card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.preview-image {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    display: block;
+}
+</style>
 {% endblock %}

@@ -2,26 +2,6 @@
 
 {% block content %}
 <div class="container mt-4">
-     <!-- 访问统计 -->
-     <div class="visit-stats mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <span class="badge bg-primary">
-                    <i class="fas fa-users"></i>
-                    Çevrimiçi: <span id="active-users">0</span>
-                </span>
-                <span class="badge bg-success ms-2">
-                    <i class="fas fa-eye"></i>
-                    Toplam Ziyaret: {{ total_visits }}
-                </span>
-                <span class="badge bg-info ms-2">
-                    <i class="fas fa-chart-line"></i>
-                    Sayfa Görüntüleme: {{ page_views }}
-                </span>
-            </div>
-        </div>
-    </div>
-
     <!-- 分类标签 -->
     <div class="categories-section mb-4">
         <h5 class="mb-3">Kategoriler</h5>
@@ -29,80 +9,47 @@
             <a href="/" class="category-tag {% if not current_category %}active{% endif %}">
                 Tümü
             </a>
-            {% for category, count in categories %}
+            {% for category in categories %}
             <a href="/?category_id={{ category.id }}" 
                class="category-tag {% if current_category == category.id %}active{% endif %}">
-                {{ category.name }} ({{ count }})
+                {{ category.name }} ({{ category.item_count }})
             </a>
             {% endfor %}
         </div>
     </div>
 
     <!-- 商品列表 -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4">
         {% for item in items %}
         <div class="col">
-            <div class="card h-100 {% if item.is_sold %}sold-item{% endif %}">
-                {% if item.first_image %}
-                <img src="{{ item.first_image.image_url }}" class="card-img-top" alt="{{ item.title }}">
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ item.title }}</h5>
-                    <p class="card-text">{{ item.description[:100] }}...</p>
-                    <p class="card-text"><strong>Fiyat: {{ item.price }} TL</strong></p>
-                    {% if item.is_sold %}
-                    <div class="sold-overlay">SATILDI</div>
-                    {% endif %}
-                    <div class="mt-3">
-                        <a href="/item/{{ item.id }}" class="btn btn-primary">Detaylar</a>
-                        {% if user and user.is_admin %}
-                        <a href="/edit/{{ item.id }}" class="btn btn-secondary">Düzenle</a>
+            <a href="/item/{{ item.id }}" class="text-decoration-none">
+                <div class="card h-100 {% if item.is_sold %}sold-item{% endif %}">
+                    <div class="card-img-container position-relative">
+                        {% if item.first_image %}
+                        <img src="{{ item.first_image }}" class="card-img-top" alt="{{ item.title }}">
+                        {% else %}
+                        <img src="/static/images/no-image.jpg" class="card-img-top" alt="No Image">
+                        {% endif %}
+                        {% if item.is_sold %}
+                        <div class="sold-badge">SATILDI</div>
                         {% endif %}
                     </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.title }}</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="price {% if item.is_sold %}text-muted{% endif %}">{{ item.price }} TL</span>
+                            <div class="likes-count">
+                                <i class="fas fa-heart"></i>
+                                <span id="likes-count-{{ item.id }}">{{ item.likes_count|default(0) }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         {% endfor %}
     </div>
 </div>
-
-<script>
-    let ws = null;
-    
-    function connectWebSocket() {
-        // 根据当前页面协议选择 WebSocket 协议
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws`;
-        
-        ws = new WebSocket(wsUrl);
-        
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            document.getElementById('active-users').textContent = data.active_users;
-        };
-        
-        ws.onclose = function() {
-            // 如果连接关闭，尝试重新连接
-            setTimeout(connectWebSocket, 1000);
-        };
-        
-        ws.onerror = function(err) {
-            console.error('WebSocket error:', err);
-            // 连接错误时，尝试重新连接
-            setTimeout(connectWebSocket, 5000);
-        };
-    }
-    
-    // 页面加载时连接WebSocket
-    connectWebSocket();
-    
-    // 页面关闭时断开连接
-    window.onbeforeunload = function() {
-        if (ws) {
-            ws.close();
-        }
-    };
-</script>
 
 <style>
 .categories-section {
@@ -183,6 +130,79 @@
 
 .badge i {
     margin-right: 5px;
+}
+
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card a:hover {
+    text-decoration: none;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.card-text {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.price-section {
+    font-size: 1.1rem;
+}
+
+.likes-count {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.likes-count i {
+    font-size: 1rem;
+}
+
+.sold-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.no-image-placeholder {
+    background: linear-gradient(45deg, #f8f9fa 25%, #e9ecef 25%, #e9ecef 50%, #f8f9fa 50%, #f8f9fa 75%, #e9ecef 75%, #e9ecef 100%);
+    background-size: 20px 20px;
+}
+
+.sold-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #dc3545;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: bold;
 }
 </style>
 {% endblock %}
